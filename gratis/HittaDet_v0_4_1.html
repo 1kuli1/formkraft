@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hitta det! v0.4.1</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f1ea;color:#222}
+.wrap{max-width:980px;margin:0 auto;padding:18px}
+header{background:#1f2f3d;color:#fff;padding:28px 18px;border-radius:0 0 22px 22px;text-align:center}
+header h1{margin:0 0 8px;font-size:3rem}
+header p{margin:0;opacity:.9}
+.panel{background:#fff;margin-top:18px;padding:18px;border-radius:18px;box-shadow:0 4px 18px rgba(0,0,0,.08)}
+label{display:block;font-weight:bold;margin:14px 0 6px}
+input,textarea,select{width:100%;padding:13px;border:1px solid #ccc;border-radius:10px;font-size:1rem}
+textarea{min-height:120px;resize:vertical}
+button{width:100%;padding:14px;margin-top:12px;border:0;border-radius:12px;background:#e7b44c;font-weight:bold;cursor:pointer}
+.secondary{background:#e8e8e8}
+.danger{background:#c94f4f;color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{border:1px solid #ddd;border-left:6px solid #e7b44c;border-radius:14px;padding:14px;margin:12px 0;background:#fbfbfb}
+.empty{padding:18px;background:#fafafa;border:1px dashed #ccc;border-radius:14px;text-align:center}
+.stats{padding:10px;background:#eef5ff;border-radius:10px;margin-bottom:10px}
+.infoText{white-space:pre-wrap;line-height:1.45}
+.linksBox{margin-top:10px;padding:10px;background:#fff7e6;border-radius:10px}
+.linksBox a{display:block;margin:6px 0;font-weight:bold}
+.safety{margin-top:8px;color:#7a4b00;font-size:.92rem;background:#fff7e6;padding:10px;border-radius:10px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}header h1{font-size:1.9rem}.wrap{padding:12px}}
+</style>
+</head>
+<body>
+<header>
+<h1>🔎 Hitta det! v0.4.1</h1>
+<p>Samla information, kontaktuppgifter och flera länkar i samma post.</p>
+</header>
+
+<main class="wrap">
+<section class="panel">
+<label for="search">Vad söker du?</label>
+<input id="search" placeholder="Exempel: försäkring, skadeanmälan, Facebook, GitHub">
+</section>
+
+<section class="panel">
+<h2>Ny post</h2>
+
+<div class="grid">
+<div>
+<label for="kategori">Kategori</label>
+<select id="kategori">
+<option>Garanti</option>
+<option>Försäkring</option>
+<option>Abonnemang</option>
+<option>Dokument</option>
+<option>Pärm / fysisk plats</option>
+<option>Övrigt</option>
+</select>
+</div>
+<div>
+<label for="datum">Datum / förfallodag</label>
+<input type="date" id="datum">
+</div>
+</div>
+
+<label for="namn">Namn</label>
+<input id="namn" placeholder="Exempel: Hemförsäkring, Bilskatt, Facebook">
+
+<label for="plats">Var finns det?</label>
+<input id="plats" placeholder="Exempel: Digitalt, Pärm 3, mobilen">
+
+<label for="info">Information, kontaktuppgifter och länkar</label>
+<textarea id="info" placeholder="Bolag: Länsförsäkringar
+Försäkringsnummer: 123456
+Skadeanmälan: https://exempel.se/skada
+Mina sidor: https://exempel.se/login"></textarea>
+<div class="safety">🔒 Spara inte banklösenord, BankID-koder eller andra känsliga lösenord här.</div>
+
+<button id="sparaKnapp" onclick="sparaPost()">Spara post</button>
+<button class="secondary" onclick="rensaFormular()">Rensa fält</button>
+</section>
+
+<section class="panel">
+<button id="toggleBtn" class="secondary" onclick="visaDoljPoster()">▼ Visa sparade poster</button>
+<div id="resultat" style="display:none;"></div>
+</section>
+</main>
+
+<script>
+const storageKey = "hittadet_poster_v01";
+let poster = JSON.parse(localStorage.getItem(storageKey)) || [];
+let posterSynliga = false;
+let redigeraIndex = -1;
+
+function sparaTillWebblasare(){ localStorage.setItem(storageKey, JSON.stringify(poster)); }
+function hamtaText(id){ return document.getElementById(id).value.trim(); }
+
+function rensaFormular(){
+document.getElementById("kategori").selectedIndex = 0;
+document.getElementById("datum").value = "";
+document.getElementById("namn").value = "";
+document.getElementById("plats").value = "";
+document.getElementById("info").value = "";
+redigeraIndex = -1;
+document.getElementById("sparaKnapp").textContent = "Spara post";
+}
+
+function sparaPost(){
+const post = {
+kategori: hamtaText("kategori"),
+namn: hamtaText("namn"),
+plats: hamtaText("plats"),
+info: hamtaText("info"),
+datum: hamtaText("datum"),
+skapad: new Date().toISOString()
+};
+if(!post.namn){ alert("Skriv ett namn på posten först."); return; }
+if(redigeraIndex >= 0){ poster[redigeraIndex] = post; } else { poster.unshift(post); }
+sparaTillWebblasare();
+rensaFormular();
+if(!posterSynliga){ visaDoljPoster(); } else { visaPoster(filtreraPoster()); }
+}
+
+function redigeraPost(index){
+const post = poster[index];
+document.getElementById("kategori").value = post.kategori || "Övrigt";
+document.getElementById("datum").value = post.datum || "";
+document.getElementById("namn").value = post.namn || "";
+document.getElementById("plats").value = post.plats || "";
+document.getElementById("info").value = post.info || "";
+redigeraIndex = index;
+document.getElementById("sparaKnapp").textContent = "Uppdatera post";
+window.scrollTo({top:0, behavior:"smooth"});
+}
+
+function taBortPost(index){
+if(!confirm("Vill du ta bort denna post?")) return;
+poster.splice(index, 1);
+sparaTillWebblasare();
+visaPoster(filtreraPoster());
+}
+
+function visaDoljPoster(){
+const resultat = document.getElementById("resultat");
+const knapp = document.getElementById("toggleBtn");
+posterSynliga = !posterSynliga;
+resultat.style.display = posterSynliga ? "block" : "none";
+knapp.textContent = posterSynliga ? "▲ Dölj sparade poster" : "▼ Visa sparade poster";
+if(posterSynliga){ visaPoster(filtreraPoster()); }
+}
+
+function filtreraPoster(){
+const sokord = document.getElementById("search").value.toLowerCase().trim();
+if(!sokord) return poster;
+return poster.filter(post => {
+const allt = `${post.kategori || ""} ${post.namn || ""} ${post.plats || ""} ${post.info || ""} ${post.datum || ""}`.toLowerCase();
+return allt.includes(sokord);
+});
+}
+
+function dagarKvar(datum){
+if(!datum) return "";
+const idag = new Date();
+const slutdatum = new Date(datum + "T00:00:00");
+const skillnad = Math.ceil((slutdatum - idag) / (1000 * 60 * 60 * 24));
+if(skillnad < 0) return "Har gått ut";
+if(skillnad === 0) return "Går ut idag";
+return skillnad + " dagar kvar";
+}
+
+function skydda(text){
+return String(text)
+.replaceAll("&", "&amp;")
+.replaceAll("<", "&lt;")
+.replaceAll(">", "&gt;")
+.replaceAll('"', "&quot;")
+.replaceAll("'", "&#039;");
+}
+
+function hittaLankar(text){
+const matchningar = String(text || "").match(/(https?:\/\/[^\s]+|www\.[^\s]+)/gi);
+return matchningar || [];
+}
+
+function snyggtNamn(url){
+const liten = url.toLowerCase();
+if(liten.includes("facebook")) return "Facebook";
+if(liten.includes("linkedin")) return "LinkedIn";
+if(liten.includes("github")) return "GitHub";
+if(liten.includes("canva")) return "Canva";
+if(liten.includes("chatgpt") || liten.includes("openai")) return "ChatGPT";
+return url.replace(/^https?:\/\//i,"").replace(/^www\./i,"").split("/")[0];
+}
+
+function skapaInfoHtml(info){
+if(!info) return "Ingen information";
+const text = String(info).trim();
+const lankar = hittaLankar(text);
+let html = `<div class="infoText">${skydda(text)}</div>`;
+if(lankar.length > 0){
+html += `<div class="linksBox"><strong>Öppningsbara länkar:</strong>`;
+lankar.forEach((lank, index) => {
+const url = lank.startsWith("http") ? lank : "https://" + lank;
+const namn = snyggtNamn(lank);
+const nummer = lankar.length > 1 ? " " + (index + 1) : "";
+html += `<a href="${skydda(url)}" target="_blank" rel="noopener noreferrer">🌐 ${skydda(namn)}${nummer}</a>`;
+});
+html += `</div>`;
+}
+return html;
+}
+
+function visaPoster(lista){
+const resultat = document.getElementById("resultat");
+resultat.innerHTML = "";
+if(lista.length === 0){
+resultat.innerHTML = `<div class="empty">Inga träffar för sökningen.<br>Det finns ${poster.length} sparade poster.</div>`;
+return;
+}
+resultat.innerHTML = `<div class="stats">Visar ${lista.length} träffar av ${poster.length} poster</div>`;
+lista.forEach(post => {
+const verkligtIndex = poster.indexOf(post);
+const datumText = post.datum ? `${post.datum} (${dagarKvar(post.datum)})` : "Ej angivet";
+resultat.innerHTML += `
+<article class="card">
+<h3>${skydda(post.namn || "Namnlös post")}</h3>
+<p><strong>Kategori:</strong> ${skydda(post.kategori || "Ej angivet")}</p>
+<p><strong>Plats:</strong> ${skydda(post.plats || "Ej angivet")}</p>
+<p><strong>Datum:</strong> ${skydda(datumText)}</p>
+<p><strong>Information:</strong><br>${skapaInfoHtml(post.info)}</p>
+<button class="secondary" onclick="redigeraPost(${verkligtIndex})">Redigera post</button>
+<button class="danger" onclick="taBortPost(${verkligtIndex})">Ta bort post</button>
+</article>`;
+});
+}
+
+document.getElementById("search").addEventListener("input", () => {
+if(!posterSynliga){ visaDoljPoster(); } else { visaPoster(filtreraPoster()); }
+});
+</script>
+</body>
+</html>
