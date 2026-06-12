@@ -47,8 +47,9 @@ select {
     border: 1px solid #444;
     background-color: #111821;
     color: white;
+   font-size: 16px;
 }
-font-size: 16px;
+
 /* =========================
    MOBILANPASSNING
 ========================= */
