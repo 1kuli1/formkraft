@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hitta det! – Tommy-Centralen</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+    }
+    .wrapper {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 2.1rem;
+    }
+    .tagline {
+      color: #cbd5e1;
+      margin: 0;
+    }
+    .panel {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+    }
+    label {
+      display: block;
+      margin: 10px 0 6px;
+      color: #e2e8f0;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #f8fafc;
+      font-size: 1rem;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+    button, .button-link {
+      display: inline-block;
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 16px;
+      margin: 8px 6px 0 0;
+      background: #facc15;
+      color: #111827;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    button.secondary {
+      background: #334155;
+      color: #f8fafc;
+    }
+    button.danger {
+      background: #ef4444;
+      color: #fff;
+    }
+    .search-input {
+      font-size: 1.2rem;
+      padding: 16px;
+      border: 2px solid #facc15;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .result-card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .result-card h3 {
+      margin: 0 0 6px;
+    }
+    .meta {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+    .note {
+      color: #cbd5e1;
+      white-space: pre-wrap;
+    }
+    .hidden { display: none; }
+    .small {
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+    @media (max-width: 640px) {
+      .wrapper { padding: 14px; }
+      h1 { font-size: 1.7rem; }
+      button, .button-link { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrapper">
+    <header>
+      <h1>Hitta det!</h1>
+      <p class="tagline">Din personliga sökcentral för länkar, appar, projekt och viktiga saker.</p>
+    </header>
+
+    <section class="panel">
+      <label for="search">Sök</label>
+      <input id="search" class="search-input" type="search" placeholder="Sök t.ex. kvitto, skylt, github, dx, bankid..." autocomplete="off">
+      <p class="small">Sökningen letar i namn, kategori, nyckelord, länk och anteckning.</p>
+    </section>
+
+    <section class="panel">
+      <button id="toggleForm">Lägg till ny post</button>
+      <button id="newFolderBtn" class="secondary">Ny mapp</button>
+      <button id="exportBtn" class="secondary">Exportera databas</button>
+      <label for="importFile" class="button-link secondary">Importera databas</label>
+      <input id="importFile" class="hidden" type="file" accept="application/json">
+      <button id="resetBtn" class="danger">Återställ exempeldata</button>
+    </section>
+
+    <section id="formPanel" class="panel hidden">
+      <h2 id="formTitle">Ny post</h2>
+      <input id="editId" type="hidden">
+
+      <label for="name">Namn</label>
+      <input id="name" type="text" placeholder="Exempel: Kvittomall">
+
+      <label for="folder">Mapp</label><input id="folder" type="text" placeholder="Exempel: Formkraft">
+
+      <label for="category">Kategori</label>
+      <select id="category">
+        <option>App</option>
+        <option>Verktyg</option>
+        <option>Projekt</option>
+        <option>Dokument</option>
+        <option>Webbsida</option>
+        <option>Kontakt</option>
+        <option>Annat</option>
+      </select>
+
+      <label for="url">Länk / sökväg / app-länk</label>
+      <input id="url" type="text" placeholder="https://... eller bankid:// eller mailto:...">
+
+      <label for="keywords">Nyckelord</label>
+      <input id="keywords" type="text" placeholder="Skriv ord som ska göra posten lätt att hitta">
+
+      <label for="note">Anteckning</label>
+      <textarea id="note" placeholder="Kort beskrivning eller instruktion"></textarea>
+
+      <button id="saveBtn">Spara post</button>
+      <button id="cancelBtn" class="secondary">Avbryt</button>
+    </section>
+
+    <section class="panel">
+      <h2>Träffar</h2>
+      <div id="results" class="grid"></div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'hitta-det-tommy-database-v1';
+
+    const defaultItems = [
+      {
+        id: crypto.randomUUID(),
+        name: 'Kvittomall',
+        category: 'Verktyg',
+        url: 'https://1kuli1.github.io/formkraft/',
+        keywords: 'kvitto kvittomall marknad knalle formkraft',
+        note: 'Länk till Formkraft där kvittomallen kan ligga eller länkas vidare.'
+      },
+      {
+        id: crypto.randomUUID(),
+        name: 'Skyltgenerator',
+        category: 'Verktyg',
+        url: 'https://1kuli1.github.io/formkraft/',
+        keywords: 'skylt skyltar pris marknad formkraft',
+        note: 'Sökväg kan ändras när verktyget får egen exakt adress.'
+      },
+      {
+        id: crypto.randomUUID(),
+        name: 'GitHub – Formkraft',
+        category: 'Projekt',
+        url: 'https://github.com/1kuli1/formkraft',
+        keywords: 'github repo kod formkraft',
+        note: 'Arkiv och sanningskälla för Formkraft-filer.'
+      },
+      {
+        id: crypto.randomUUID(),
+        name: 'GitHub Pages – Skolquiz',
+        category: 'Projekt',
+        url: 'https://1kuli1.github.io/skolquiz/',
+        keywords: 'skolquiz esp32 github pages fråga json',
+        note: 'Skolquiz-projektets publika testlänk.'
+      },
+      {
+        id: crypto.randomUUID(),
+        name: 'BankID',
+        category: 'App',
+        url: 'bankid://',
+        keywords: 'bankid legitimation identifiering app',
+        note: 'Fungerar bara om mobilen/webbläsaren tillåter app-länken.'
+      },
+      {
+        id: crypto.randomUUID(),
+        name: 'Swish',
+        category: 'App',
+        url: 'swish://',
+        keywords: 'swish betalning app qr',
+        note: 'Fungerar bara om mobilen/webbläsaren tillåter app-länken.'
+      }
+    ];
+
+    let items = loadItems();
+
+    const searchInput = document.getElementById('search');
+    const results = document.getElementById('results');
+    const formPanel = document.getElementById('formPanel');
+    const toggleForm = document.getElementById('toggleForm');
+    const saveBtn = document.getElementById('saveBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const importFile = document.getElementById('importFile');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function loadItems() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return defaultItems;
+      try { return JSON.parse(saved); }
+      catch { return defaultItems; }
+    }
+
+    function saveItems() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+
+    function normalize(text) {
+      return String(text || '').toLowerCase().trim();
+    }
+
+    function getSearchText(item) {
+      return normalize(`${item.name} ${item.category} ${item.url} ${item.keywords} ${item.note}`);
+    }
+
+    function render() {
+      const query = normalize(searchInput.value);
+      const filtered = items.filter(item => getSearchText(item).includes(query));
+      results.innerHTML = '';
+      if (filtered.length === 0) {
+        results.innerHTML = '<p>Inga träffar ännu.</p>';
+        return;
+      }
+      filtered.forEach(item => {
+        const card = document.createElement('article');
+        card.className = 'result-card';
+        card.innerHTML = `
+          <h3>${escapeHtml(item.name)}</h3>
+          <div class="meta">${escapeHtml(item.category)} · ${escapeHtml(item.keywords)}</div>
+          <p class="note">${escapeHtml(item.note)}</p>
+          <a class="button-link" href="${escapeAttribute(item.url)}" target="_blank" rel="noopener">Öppna</a>
+          <button class="secondary" data-edit="${item.id}">Ändra</button>
+          <button class="danger" data-delete="${item.id}">Ta bort</button>
+        `;
+        results.appendChild(card);
+      });
+    }
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function escapeAttribute(text) {
+      return escapeHtml(text).replaceAll('`', '&#096;');
+    }
+
+    function clearForm() {
+      document.getElementById('editId').value = '';
+      document.getElementById('name').value = '';
+      document.getElementById('category').value = 'App';
+      document.getElementById('url').value = '';
+      document.getElementById('keywords').value = '';
+      document.getElementById('note').value = '';
+      document.getElementById('formTitle').textContent = 'Ny post';
+    }
+
+    function openForm(item = null) {
+      formPanel.classList.remove('hidden');
+      if (!item) {
+        clearForm();
+        return;
+      }
+      document.getElementById('editId').value = item.id;
+      document.getElementById('name').value = item.name;
+      document.getElementById('category').value = item.category;
+      document.getElementById('url').value = item.url;
+      document.getElementById('keywords').value = item.keywords;
+      document.getElementById('note').value = item.note;
+      document.getElementById('formTitle').textContent = 'Ändra post';
+    }
+
+    function closeForm() {
+      formPanel.classList.add('hidden');
+      clearForm();
+    }
+
+    toggleForm.addEventListener('click', () => openForm());
+    cancelBtn.addEventListener('click', closeForm);
+    searchInput.addEventListener('input', render);
+
+    saveBtn.addEventListener('click', () => {
+      const id = document.getElementById('editId').value;
+      const item = {
+        id: id || crypto.randomUUID(),
+        name: document.getElementById('name').value.trim(),
+        category: document.getElementById('category').value,
+        url: document.getElementById('url').value.trim(),
+        keywords: document.getElementById('keywords').value.trim(),
+        note: document.getElementById('note').value.trim()
+      };
+      if (!item.name || !item.url) {
+        alert('Fyll i minst namn och länk/sökväg.');
+        return;
+      }
+      if (id) items = items.map(existing => existing.id === id ? item : existing);
+      else items.unshift(item);
+      saveItems();
+      closeForm();
+      render();
+    });
+
+    results.addEventListener('click', event => {
+      const editId = event.target.dataset.edit;
+      const deleteId = event.target.dataset.delete;
+      if (editId) {
+        const item = items.find(existing => existing.id === editId);
+        if (item) openForm(item);
+      }
+      if (deleteId && confirm('Vill du ta bort posten?')) {
+        items = items.filter(existing => existing.id !== deleteId);
+        saveItems();
+        render();
+      }
+    });
+
+    exportBtn.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'hitta-det-databas.json';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+
+    importFile.addEventListener('change', event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          if (!Array.isArray(imported)) throw new Error('Fel format');
+          items = imported;
+          saveItems();
+          render();
+          alert('Databasen är importerad.');
+        } catch {
+          alert('Kunde inte importera filen. Kontrollera att det är rätt JSON-fil.');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if (!confirm('Vill du återställa exempeldata? Dina nuvarande poster ersätts.')) return;
+      items = defaultItems;
+      saveItems();
+      render();
+    });
+
+    
+
+// Mappfunktioner kommer i nästa version
+
+render();
+  </script>
+</body>
+</html>
