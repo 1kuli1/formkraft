@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+
+  <!-- Anger teckenkodning så svenska tecken fungerar korrekt -->
+  <meta charset="UTF-8">
+
+  <!-- Gör sidan mobilanpassad -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Sidans titel -->
+  <title>QR-visitkort för privatperson</title>
+
+  <style>
+
+    /* Gör så att padding räknas in i elementens bredd */
+    *{
+      box-sizing:border-box;
+    }
+
+    /* Grundutseende för hela sidan */
+    body{
+      margin:0;
+      font-family:Arial, sans-serif;
+      background:#f3f4f6;
+      color:#111827;
+    }
+
+    /* Yttre behållare */
+    .page{
+      min-height:100vh;
+      padding:24px;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+    }
+
+    /* Huvudkortet */
+    .wrapper{
+      width:100%;
+      max-width:1050px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:24px;
+    }
+
+    /* Panel för formulär och visitkort */
+    .panel{
+      background:#ffffff;
+      border-radius:18px;
+      padding:24px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    /* Rubrik */
+    h1{
+      margin:0 0 10px;
+      font-size:28px;
+      color:#0f172a;
+    }
+
+    /* Förklarande text */
+    .intro{
+      margin:0 0 22px;
+      color:#4b5563;
+      line-height:1.5;
+    }
+
+    /* Etikett ovanför fält */
+    label{
+      display:block;
+      margin-top:14px;
+      margin-bottom:6px;
+      font-weight:bold;
+      font-size:14px;
+    }
+
+    /* Textfält */
+    input,
+    textarea{
+      width:100%;
+      padding:12px;
+      border:1px solid #d1d5db;
+      border-radius:10px;
+      font-size:15px;
+    }
+
+    /* Textarea */
+    textarea{
+      min-height:80px;
+      resize:vertical;
+    }
+
+    /* Knapprad */
+    .buttons{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:18px;
+    }
+
+    /* Knapp */
+    button{
+      border:none;
+      border-radius:999px;
+      padding:12px 18px;
+      font-weight:bold;
+      cursor:pointer;
+      font-size:15px;
+    }
+
+    /* Primär knapp */
+    .primary{
+      background:#d4af37;
+      color:#111827;
+    }
+
+    /* Sekundär knapp */
+    .secondary{
+      background:#111827;
+      color:#ffffff;
+    }
+
+    /* Visitkortets yta */
+    .card-preview{
+      background:linear-gradient(135deg,#0f172a,#1e293b);
+      color:#ffffff;
+      border-radius:22px;
+      padding:28px;
+      min-height:420px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+
+    /* Namn på visitkortet */
+    .card-name{
+      font-size:32px;
+      font-weight:bold;
+      margin-bottom:6px;
+    }
+
+    /* Beskrivning */
+    .card-title{
+      color:#facc15;
+      font-size:18px;
+      margin-bottom:18px;
+    }
+
+    /* Kontaktuppgifter */
+    .card-info{
+      line-height:1.8;
+      color:#e5e7eb;
+      word-break:break-word;
+    }
+
+    /* Nedre del */
+    .card-bottom{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:18px;
+      margin-top:28px;
+    }
+
+    /* QR-rutan */
+    .qr-box{
+      background:#ffffff;
+      padding:12px;
+      border-radius:14px;
+      width:150px;
+      height:150px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    /* QR-bilden */
+    .qr-box img{
+      width:126px;
+      height:126px;
+    }
+
+    /* Liten text */
+    .small{
+      font-size:13px;
+      color:#cbd5e1;
+      line-height:1.4;
+    }
+
+    /* Utskriftsläge */
+    @media print{
+
+      body{
+        background:#ffffff;
+      }
+
+      .form-panel{
+        display:none;
+      }
+
+      .page{
+        padding:0;
+      }
+
+      .wrapper{
+        display:block;
+        max-width:600px;
+      }
+
+      .panel{
+        box-shadow:none;
+      }
+    }
+
+    /* Mobilanpassning */
+    @media (max-width:850px){
+
+      .wrapper{
+        grid-template-columns:1fr;
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- Sidans huvudområde -->
+  <main class="page">
+
+    <!-- Tvåkolumnslayout -->
+    <section class="wrapper">
+
+      <!-- Formulärpanel -->
+      <div class="panel form-panel">
+
+        <h1>QR-visitkort för privatperson</h1>
+
+        <p class="intro">
+          Fyll i uppgifterna. Visitkortet uppdateras direkt och QR-koden leder till den länk du anger.
+        </p>
+
+        <label for="name">Namn</label>
+        <input id="name" type="text" value="Anna Andersson">
+
+        <label for="title">Kort beskrivning</label>
+        <input id="title" type="text" value="Privat kontaktkort">
+
+        <label for="phone">Telefon</label>
+        <input id="phone" type="text" value="070-123 45 67">
+
+        <label for="email">E-post</label>
+        <input id="email" type="email" value="anna@example.se">
+
+        <label for="place">Ort</label>
+        <input id="place" type="text" value="Sunne">
+
+        <label for="link">Länk till QR-kod</label>
+        <input id="link" type="url" value="https://example.se">
+
+        <label for="note">Kort text</label>
+
+        <textarea id="note">
+Skanna QR-koden för mer information eller för att spara mina kontaktuppgifter.
+        </textarea>
+
+        <div class="buttons">
+
+          <button class="primary" onclick="updateCard()">
+            Uppdatera visitkort
+          </button>
+
+          <button class="secondary" onclick="window.print()">
+            Skriv ut / spara som PDF
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- Förhandsvisning -->
+      <div class="panel">
+
+        <article class="card-preview">
+
+          <div>
+
+            <div id="cardName" class="card-name">
+              Anna Andersson
+            </div>
+
+            <div id="cardTitle" class="card-title">
+              Privat kontaktkort
+            </div>
+
+            <div class="card-info">
+
+              <div id="cardPhone">
+                Telefon: 070-123 45 67
+              </div>
+
+              <div id="cardEmail">
+                E-post: anna@example.se
+              </div>
+
+              <div id="cardPlace">
+                Ort: Sunne
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="card-bottom">
+
+            <p id="cardNote" class="small">
+              Skanna QR-koden för mer information eller för att spara mina kontaktuppgifter.
+            </p>
+
+            <div class="qr-box">
+
+              <img id="qrImage" alt="QR-kod" src="">
+
+            </div>
+
+          </div>
+
+        </article>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+
+    // Hämtar ett element med hjälp av dess id
+    function getValue(id){
+
+      // Returnerar värdet från fältet
+      return document.getElementById(id).value.trim();
+
+    }
+
+    // Uppdaterar visitkortet och QR-koden
+    function updateCard(){
+
+      // Hämtar namnet från formuläret
+      const name = getValue("name") || "Namn saknas";
+
+      // Hämtar beskrivningen från formuläret
+      const title = getValue("title") || "Privat kontaktkort";
+
+      // Hämtar telefonnumret från formuläret
+      const phone = getValue("phone") || "-";
+
+      // Hämtar e-postadressen från formuläret
+      const email = getValue("email") || "-";
+
+      // Hämtar orten från formuläret
+      const place = getValue("place") || "-";
+
+      // Hämtar länken från formuläret
+      const link = getValue("link") || "https://example.se";
+
+      // Hämtar den korta texten från formuläret
+      const note = getValue("note") || "Skanna QR-koden för mer information.";
+
+      // Skriver ut namnet på visitkortet
+      document.getElementById("cardName").textContent = name;
+
+      // Skriver ut beskrivningen på visitkortet
+      document.getElementById("cardTitle").textContent = title;
+
+      // Skriver ut telefonnumret på visitkortet
+      document.getElementById("cardPhone").textContent =
+        "Telefon: " + phone;
+
+      // Skriver ut e-postadressen på visitkortet
+      document.getElementById("cardEmail").textContent =
+        "E-post: " + email;
+
+      // Skriver ut orten på visitkortet
+      document.getElementById("cardPlace").textContent =
+        "Ort: " + place;
+
+      // Skriver ut den korta texten på visitkortet
+      document.getElementById("cardNote").textContent =
+        note;
+
+      // Skapar adressen till QR-koden
+      const qrUrl =
+        "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data="
+        + encodeURIComponent(link);
+
+      // Sätter QR-bilden
+      document.getElementById("qrImage").src = qrUrl;
+
+    }
+
+    // Uppdaterar visitkortet när sidan laddas
+    updateCard();
+
+    // Lägger till automatisk uppdatering
+    document.querySelectorAll("input, textarea").forEach(function(field){
+
+      // Lyssnar efter ändringar
+      field.addEventListener("input", updateCard);
+
+    });
+
+
+  </script>
+
+</body>
+</html>
