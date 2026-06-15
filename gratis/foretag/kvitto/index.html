@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Kvittomall – Marknadsförsäljare</title>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    background:#f3f3f3;
+    margin:0;
+    padding:20px;
+}
+
+.receipt{
+    max-width:420px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+h1{
+    text-align:center;
+    margin-bottom:5px;
+}
+
+.subtitle{
+    text-align:center;
+    color:#666;
+    margin-bottom:20px;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin-bottom:12px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    box-sizing:border-box;
+}
+
+.item-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.item-row input:first-child{
+    flex:2;
+}
+
+.item-row input:last-child{
+    flex:1;
+}
+
+.total{
+    font-size:24px;
+    font-weight:bold;
+    text-align:right;
+    margin-top:20px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+    cursor:pointer;
+    margin-top:10px;
+}
+
+.add-btn{
+    background:#2563eb;
+    color:white;
+}
+
+.print-btn{
+    background:#16a34a;
+    color:white;
+}
+
+.date{
+    margin-bottom:15px;
+    color:#555;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="receipt">
+
+    <h1>Kvitto</h1>
+
+    <div class="subtitle">
+        För marknadsförsäljare
+    </div>
+
+    <input type="text" id="seller" placeholder="Företagsnamn">
+
+    <input type="text" placeholder="Organisationsnummer">
+
+    <input type="text" placeholder="Telefonnummer">
+
+    <div class="date" id="date"></div>
+
+    <div id="items">
+
+        <div class="item-row">
+
+            <input type="text" placeholder="Produkt">
+
+            <input type="number" placeholder="Pris" class="price">
+
+        </div>
+
+    </div>
+
+    <button class="add-btn" onclick="addItem()">
+        Lägg till produkt
+    </button>
+
+    <div class="total">
+        Totalt: <span id="total">0</span> kr
+    </div>
+
+    <button class="print-btn" onclick="window.print()">
+        Skriv ut kvitto
+    </button>
+
+</div>
+
+<script>
+
+const today = new Date();
+
+document.getElementById("date").innerText =
+    "Datum: " + today.toLocaleDateString("sv-SE");
+
+function addItem(){
+
+    const items = document.getElementById("items");
+
+    const row = document.createElement("div");
+
+    row.className = "item-row";
+
+    row.innerHTML = `
+        <input type="text" placeholder="Produkt">
+        <input type="number" placeholder="Pris" class="price">
+    `;
+
+    items.appendChild(row);
+
+    setupPriceListeners();
+}
+
+function calculateTotal(){
+
+    const prices = document.querySelectorAll(".price");
+
+    let total = 0;
+
+    prices.forEach(price => {
+
+        const value = parseFloat(price.value);
+
+        if(!isNaN(value)){
+            total += value;
+        }
+
+    });
+
+    document.getElementById("total").innerText =
+        total.toFixed(2);
+}
+
+function setupPriceListeners(){
+
+    const prices = document.querySelectorAll(".price");
+
+    prices.forEach(price => {
+
+        price.oninput = calculateTotal;
+
+    });
+}
+
+setupPriceListeners();
+
+</script>
+
+</body>
+</html>
