@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Annonskollen Beta 0.2</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f3f1ea;margin:0;padding:20px}
+.wrap{max-width:1000px;margin:auto;background:#fff;padding:20px;border-radius:12px}
+input,textarea{width:100%;padding:10px;margin-top:6px;margin-bottom:10px}
+button{padding:12px 20px;cursor:pointer}
+.result{margin-top:20px;padding:15px;border-radius:10px}
+.green{background:#dff7df}
+.yellow{background:#fff4c2}
+.red{background:#ffd8d8}
+ul{padding-left:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🔍 Annonskollen Beta 0.2</h1>
+
+<label>Länk till annons</label>
+<input id="url" placeholder="https://...">
+
+<label>Annonsens text</label>
+<textarea id="text" rows="8"></textarea>
+
+<label>Swishnummer (om annonsen innehåller ett)</label>
+<input id="swish">
+
+<label>Organisationsnummer (om det anges)</label>
+<input id="orgnr">
+
+<button onclick="analysera()">Analysera annons</button>
+
+<div id="resultat"></div>
+</div>
+
+<script>
+function analysera(){
+
+let poang=0;
+let orsaker=[];
+
+const text=document.getElementById("text").value.toLowerCase();
+const url=document.getElementById("url").value.toLowerCase();
+const swish=document.getElementById("swish").value.trim();
+const orgnr=document.getElementById("orgnr").value.trim();
+
+const riskord=[
+"gratis","bara idag","sista chansen","garanterad",
+"riskfri","krypto","snabb vinst","dubbel pengarna",
+"90%","80%","70% rabatt","begränsat erbjudande"
+];
+
+riskord.forEach(ord=>{
+ if(text.includes(ord)){
+   poang++;
+   orsaker.push("Riskord upptäckt: "+ord);
+ }
+});
+
+if(url){
+ if(!url.startsWith("https://")){
+   poang+=2;
+   orsaker.push("Länken använder inte HTTPS.");
+ }
+
+ if(url.includes(".xyz")||url.includes(".top")||url.includes(".click")||url.includes(".shop")){
+   poang+=2;
+   orsaker.push("Ovanlig domänändelse.");
+ }
+
+ if(url.includes("bit.ly")||url.includes("tinyurl")){
+   poang+=2;
+   orsaker.push("Förkortad länk används.");
+ }
+}
+
+if(text.includes("bankid")){
+ poang+=2;
+ orsaker.push("BankID nämns – kontrollera syftet noggrant.");
+}
+
+if(text.includes("swish")){
+ poang+=1;
+ orsaker.push("Begär betalning via Swish.");
+}
+
+if(swish.length>0){
+ if(!/^(\d{10,12})$/.test(swish.replace(/\s/g,''))){
+   poang+=2;
+   orsaker.push("Swishnumret verkar ha fel format.");
+ }
+}
+
+if(orgnr.length>0){
+ if(!/^(\d{10}|\d{12})$/.test(orgnr.replace(/[- ]/g,''))){
+   poang+=2;
+   orsaker.push("Organisationsnumret verkar ha fel format.");
+ }
+}
+
+if(text.length<40){
+ poang+=1;
+ orsaker.push("Mycket lite information i annonsen.");
+}
+
+let klass="green";
+let rubrik="🟢 Låg risk";
+
+if(poang>=4){
+ klass="yellow";
+ rubrik="🟡 Måttlig risk";
+}
+
+if(poang>=8){
+ klass="red";
+ rubrik="🔴 Hög risk";
+}
+
+let rad="";
+if(orsaker.length===0){
+ rad="<li>Inga tydliga varningssignaler hittades.</li>";
+}else{
+ rad="<li>"+orsaker.join("</li><li>")+"</li>";
+}
+
+document.getElementById("resultat").innerHTML=`
+<div class="result ${klass}">
+<h2>${rubrik}</h2>
+<p><strong>Riskpoäng:</strong> ${poang}</p>
+<p><strong>Bedömning:</strong> Detta är endast en vägledning. Kontrollera alltid avsändare, företag och betalningsuppgifter innan du agerar.</p>
+<h3>Upptäckta signaler</h3>
+<ul>${rad}</ul>
+</div>`;
+}
+</script>
+</body>
+</html>
